@@ -6,8 +6,4 @@
 `time make -j(#threads)`
 
 4. Run the kernel
-`qemu-system-x86_64 -m 4G -smp 4 \
--drive file=debian.qcow2 \
--kernel arch/x86/boot/bzImage \
--append 'root=/dev/sda1 console=ttyS0' \
--nographic```
+`qemu-system-x86_64 -m 4G -smp 4 -drive file=debian.qcow2 -kernel linux-6.13/arch/x86/boot/bzImage -append 'root=/dev/sda1 console=ttyS0' -nographic```
