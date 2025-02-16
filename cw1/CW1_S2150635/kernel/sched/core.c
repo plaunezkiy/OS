@@ -8164,10 +8164,11 @@ SYSCALL_DEFINE2(ancestor_pid, pid_t, pid, unsigned int, n)
     }
 
     // if the nth ancestor does not exist, return -1
-    if (n != 0)
-        return -1;
+    if (n == 0)
+        return pid_task->pid;
+    return -1;
 
-	return pid_task->pid;
+	
 }
 
 /**
