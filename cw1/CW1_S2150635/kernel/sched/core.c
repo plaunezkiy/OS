@@ -8143,7 +8143,7 @@ static void get_params(struct task_struct *p, struct sched_attr *attr)
 SYSCALL_DEFINE2(ancestor_pid, pid_t, pid, unsigned int, n)
 {
     struct task_struct *pid_task;
-    pid_t ancestor_pid = -1;
+    // pid_t ancestor_pid = -1;
 
     // if pid or n is negative, return error
     if (pid < 0 || n < 0)
