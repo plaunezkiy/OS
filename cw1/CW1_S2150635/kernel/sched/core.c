@@ -8142,7 +8142,28 @@ static void get_params(struct task_struct *p, struct sched_attr *attr)
  */
 SYSCALL_DEFINE2(ancestor_pid, pid_t, pid, unsigned int, n)
 {
-	return 0;
+    struct task_struct *pid_task;
+    pid_t ancestor_pid = -1;
+
+    // if pid or n is negative, return error
+    if (pid < 0 || n < 0)
+        return -EINVAL;
+    
+    if (n == 0)
+        return pid;
+
+    pid_task = find_get_task(pid);
+    // if the process does not exist, return error
+    if (!pid_task)
+        return -ESRCH;
+    
+    // get the nth ancestor of the process
+    while (n > 0 && pid_task->real_parent) {
+        pid_task = pid_task->real_parent;
+        n--;
+    }
+
+	return pid_task->pid;
 }
 
 /**
