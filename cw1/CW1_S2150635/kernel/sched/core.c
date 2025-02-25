@@ -61,6 +61,7 @@
 #include <linux/sched/wake_q.h>
 #include <linux/scs.h>
 #include <linux/slab.h>
+#include <linux/list.h>
 #include <linux/syscalls.h>
 #include <linux/vtime.h>
 #include <linux/wait_api.h>
@@ -7355,6 +7356,12 @@ int can_nice(const struct task_struct *p, const int nice)
 	return is_nice_reduction(p, nice) || capable(CAP_SYS_NICE);
 }
 
+struct nice_queue_list {
+	struct task_struct *task;
+	int nice;
+	struct list_head list;
+};
+
 /**
  * CW1
  * sys_propagate_nice - trickle-down nice-increment to descendants
@@ -7364,6 +7371,53 @@ int can_nice(const struct task_struct *p, const int nice)
  */
 SYSCALL_DEFINE1(propagate_nice, int, increment)
 {
+	struct task_struct *cur_task, *child_task;
+	struct list_head queue;
+	struct nice_queue_list *entry, *child;
+	int value;
+	// create a visit queue
+	INIT_LIST_HEAD(&queue);
+	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
+	// init the queue
+	// get current task
+	entry->task = current;
+	// check increment >= 0
+	entry->nice = increment;
+	list_add_tail(&entry->list, &queue);
+
+	// while queue is not empty
+	while (!list_empty(&queue)) {
+		entry = list_first_entry(&queue, struct nice_queue_list, list);
+		cur_task = entry->task;
+		value = entry->nice;
+		// iterate over children and add to queue
+		if (value > 0) {
+			// init children list head
+			// INIT_LIST_HEAD(&cur_task->children);
+			// get children
+			list_for_each_entry(child_task, &(cur_task->children), children) {
+				// add to queue
+				// child_task = list_entry(childlist_head, struct task_struct, sibling);
+				child = kmalloc(sizeof(struct nice_queue_list), GFP_KERNEL);
+				child->task = child_task;
+				child->nice = value / 2;
+				list_add_tail(&child->list, &queue);
+			}
+		}
+
+		// update nice value and delete from queue
+		list_del(&entry->list);
+		// check if nice value is valid
+		if (can_nice(cur_task, value)) {
+			// update nice value
+			set_user_nice(cur_task, value);
+		} else {
+			// return error
+			return -EPERM;
+		}
+		// free entry
+		kfree(entry);
+	}
 	return 0;
 }
 
