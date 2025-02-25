@@ -8146,27 +8146,31 @@ SYSCALL_DEFINE2(ancestor_pid, pid_t, pid, unsigned int, n)
     // pid_t ancestor_pid = -1;
 
     // if pid or n is negative, return error
-    if (pid < 0 || n < 0)
-        return -EINVAL;
-    
-    if (n == 0)
-        return pid;
+    if (pid < 0 || n < 0) {
+        return -1;
+	}
+	// if pid is 0, use calling process's pid
+	if (pid == 0) {
+		pid_task = current;
+	} else {
+		pid_task = find_get_task(pid);
+	}
 
-    pid_task = find_get_task(pid);
-    // if the process does not exist, return error
-    if (!pid_task)
-        return -ESRCH;
-    
+    // if the process does not exist, return -1
+    if (!pid_task) {
+        return -1;
+	}
     // get the nth ancestor of the process
-    while (n > 0 && pid_task->real_parent) {
+    while (n > 0 && (pid_task->real_parent != pid_task)) {
         pid_task = pid_task->real_parent;
         n--;
     }
 
     // if the nth ancestor does not exist, return -1
-    if (n == 0)
-        return pid_task->pid;
-    return -1;
+    if (n > 0) {
+        return -1;
+	}
+    return pid_task->pid;
 
 	
 }
