@@ -120,7 +120,9 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(sched_compute_energy_tp);
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 /* CW1 - an epoch equals 10 seconds */
+// HZ = 1000
 #define TICKS_PER_EPOCH (10 * HZ)
+// sec, msec, usec, nsec
 
 #ifdef CONFIG_SCHED_DEBUG
 /*
@@ -5364,6 +5366,10 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 */
 	arch_start_context_switch(prev);
 
+	// CW1
+	// update the used_cpus
+	cpumask_set_cpu(smp_processor_id(), &next->used_cpus);
+
 	/*
 	 * kernel -> kernel   lazy + transfer active
 	 *   user -> kernel   lazy + mmgrab_lazy_tlb() active
@@ -5664,6 +5670,7 @@ static inline u64 cpu_resched_latency(struct rq *rq) { return 0; }
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
+u64 last_epoch = 0;
 void sched_tick(void)
 {
 	int cpu = smp_processor_id();
@@ -5687,6 +5694,18 @@ void sched_tick(void)
 	hw_pressure = arch_scale_hw_pressure(cpu_of(rq));
 	update_hw_load_avg(rq_clock_task(rq), rq, hw_pressure);
 	curr->sched_class->task_tick(rq, curr, 0);
+	// CW1
+	// update scheduled tick count
+	curr->epoch_ticks++;
+	// reset if the end of epoch
+	u64 current_epoch = rq_clock(rq) / (TICKS_PER_EPOCH * NSEC_PER_MSEC);
+
+	if (current_epoch > last_epoch) {
+		// reset epoch ticks
+		curr->epoch_ticks = 0;
+		last_epoch = current_epoch;
+	}
+	// 
 	if (sched_feat(LATENCY_WARN))
 		resched_latency = cpu_resched_latency(rq);
 	calc_global_load_tick(rq);
@@ -7378,6 +7397,9 @@ SYSCALL_DEFINE1(propagate_nice, int, increment)
 	// create a visit queue
 	INIT_LIST_HEAD(&queue);
 	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
+	if (!entry) {
+		return -ENOMEM;
+	}
 	// init the queue
 	// get current task
 	entry->task = current;
@@ -7399,6 +7421,9 @@ SYSCALL_DEFINE1(propagate_nice, int, increment)
 				// add to queue
 				// child_task = list_entry(childlist_head, struct task_struct, sibling);
 				child = kmalloc(sizeof(struct nice_queue_list), GFP_KERNEL);
+				if (!child) {
+					return -ENOMEM;
+				}
 				child->task = child_task;
 				child->nice = value / 2;
 				list_add_tail(&child->list, &queue);
