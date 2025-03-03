@@ -10,3 +10,4 @@
 
 5. Set a breakpoint at the syscall
     `b __x64_sys_ancestor_pid`
+    `b __x64_sys_propagate_nice`
