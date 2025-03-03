@@ -5366,9 +5366,9 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 */
 	arch_start_context_switch(prev);
 
-	// CW1
-	// update the used_cpus
-	cpumask_set_cpu(smp_processor_id(), &next->used_cpus);
+	// // CW1
+	// // update the used_cpus
+	// cpumask_set_cpu(smp_processor_id(), &next->used_cpus);
 
 	/*
 	 * kernel -> kernel   lazy + transfer active
@@ -5670,7 +5670,6 @@ static inline u64 cpu_resched_latency(struct rq *rq) { return 0; }
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
-u64 last_epoch = 0;
 void sched_tick(void)
 {
 	int cpu = smp_processor_id();
@@ -5697,13 +5696,14 @@ void sched_tick(void)
 	// CW1
 	// update scheduled tick count
 	curr->epoch_ticks++;
+	cpumask_set_cpu(cpu, &curr->used_cpus);
 	// reset if the end of epoch
-	u64 current_epoch = rq_clock(rq) / (TICKS_PER_EPOCH * NSEC_PER_MSEC);
-
-	if (current_epoch > last_epoch) {
+	if (curr->epoch_ticks >= TICKS_PER_EPOCH) {
 		// reset epoch ticks
 		curr->epoch_ticks = 0;
-		last_epoch = current_epoch;
+		// clear the mask
+		cpumask_clear(&curr->used_cpus);
+		cpumask_set_cpu(cpu, &curr->used_cpus);
 	}
 	// 
 	if (sched_feat(LATENCY_WARN))
@@ -7419,8 +7419,8 @@ SYSCALL_DEFINE1(propagate_nice, int, increment)
 	// get current task
 	entry->task = current;
 	// check increment >= 0
-	int val_to_asgn = min(increment + task_nice(current), 19);
-	entry->nice = val_to_asgn;
+	// int val_to_asgn = min(increment + task_nice(current), 19);
+	entry->nice = increment;
 	list_add_tail(&entry->list, &queue);
 
 	// while queue is not empty
@@ -7449,7 +7449,7 @@ SYSCALL_DEFINE1(propagate_nice, int, increment)
 
 		// update nice value and delete from queue
 		list_del(&entry->list);
-		val_to_asgn = min(value + task_nice(cur_task), 19); 
+		int val_to_asgn = min(value + task_nice(cur_task), 19); 
 		// check if nice value is valid
 		if (can_nice(cur_task, val_to_asgn)) {
 			// update nice value (nice <= 19)
