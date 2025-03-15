@@ -1,0 +1,1 @@
+make --directory=/home/os/linux/ -j12

@@ -3,6 +3,7 @@
     "*.js": "javascript",
     "*.jsx": "javascriptreact",
     "*.php": "php",
-    "kernel_stat.h": "c"
+    "kernel_stat.h": "c",
+    "task_stack.h": "c"
   }
 }
