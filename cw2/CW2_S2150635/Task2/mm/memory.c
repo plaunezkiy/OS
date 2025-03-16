@@ -5355,6 +5355,10 @@
 	 struct vm_area_struct *vma = vmf->vma;
 	 struct folio *folio;
 	 vm_fault_t ret;
+
+	//  cw2. Task2
+	current->cow_faults++;
+	// 
  
 	 ret = vmf_can_call_fault(vmf);
 	 if (!ret)
@@ -6106,6 +6110,14 @@
 	 ret = sanitize_fault_flags(vma, &flags);
 	 if (ret)
 		 goto out;
+		
+	// cw2. task2
+	// happens when FAULT_FLAG_WRITE is set
+	// during handling of the page fault
+	if (flags & FAULT_FLAG_WRITE) {
+		current->write_faults++;
+	}
+	// 
  
 	 if (!arch_vma_access_permitted(vma, flags & FAULT_FLAG_WRITE,
 						 flags & FAULT_FLAG_INSTRUCTION,
@@ -6121,6 +6133,10 @@
 	  * space.  Kernel faults are handled more gracefully.
 	  */
 	 if (flags & FAULT_FLAG_USER)
+		//  cw2. task2
+		// happens in user mode
+		current->user_faults++;
+		// 
 		 mem_cgroup_enter_user_fault();
  
 	 lru_gen_enter_fault(vma);
