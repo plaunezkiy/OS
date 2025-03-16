@@ -788,6 +788,13 @@ struct page_ops {
 	unsigned int set;
 };
 
+// struct page_ops {
+// 	struct single_page_ops			pgd_ops;
+// 	struct single_page_ops			pud_ops;
+// 	struct single_page_ops			pmd_ops;
+// 	struct single_page_ops			pte_ops;
+// };
+
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
@@ -812,7 +819,6 @@ struct task_struct {
 	/* Per task flags (PF_*), defined further below: */
 	unsigned int			flags;
 	unsigned int			ptrace;
-
 	// cw2
 	struct page_ops			pgd_ops;
 	struct page_ops			pud_ops;
