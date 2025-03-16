@@ -456,6 +456,25 @@ static void unlock_trace(struct task_struct *task)
 	up_read(&task->signal->exec_update_lock);
 }
 
+// cw2
+static int proc_fault_stats(struct seq_file *m, struct pid_namespace *ns,
+	struct pid *pid, struct task_struct *task)
+{
+	// safety check
+	if (!task)
+		return -ESRCH;
+
+	/* Output the different types of faults and their counts */
+	seq_printf(m, "write %u\n", task->write_faults);
+	seq_printf(m, "user %u\n", task->user_faults);
+	seq_printf(m, "instruction %u\n", task->instruction_faults);
+	seq_printf(m, "cow %u\n", task->cow_faults);
+	seq_printf(m, "mlocked %u\n", task->mlocked_faults);
+
+	return 0;
+}
+// /cw2
+
 #ifdef CONFIG_STACKTRACE
 
 #define MAX_STACK_TRACE_DEPTH	64

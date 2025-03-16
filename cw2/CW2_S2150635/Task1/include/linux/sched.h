@@ -825,6 +825,12 @@ struct task_struct {
 	struct page_ops			pmd_ops;
 	struct page_ops			pte_ops;
 	// 
+	unsigned int write_faults;
+	unsigned int user_faults;
+	unsigned int instruction_faults;
+	unsigned int cow_faults;
+	unsigned int mlocked_faults; 
+	// 
 
 #ifdef CONFIG_MEM_ALLOC_PROFILING
 	struct alloc_tag		*alloc_tag;
