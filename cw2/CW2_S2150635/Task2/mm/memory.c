@@ -4435,6 +4435,12 @@
 	 }
  
 	 folio_throttle_swaprate(folio, GFP_KERNEL);
+
+	//  cw2. task2
+	if ((vma->vm_flags & VM_LOCKED) || folio_test_mlocked(folio)) {
+		current->mlocked_faults++;
+	}
+	// /cw2
  
 	 /*
 	  * Back out if somebody else already faulted in this pte.
@@ -4788,7 +4794,11 @@
 	 /* File mapping without ->vm_ops ? */
 	 if (vma->vm_flags & VM_SHARED)
 		 return VM_FAULT_SIGBUS;
- 
+	// cw2. task2
+	if (vma->vm_flags & VM_LOCKED) {
+		current->mlocked_faults++;
+	}
+	// /cw2
 	 /*
 	  * Use pte_alloc() instead of pte_alloc_map(), so that OOM can
 	  * be distinguished from a transient failure of pte_offset_map().
@@ -6112,12 +6122,16 @@
 		 goto out;
 		
 	// cw2. task2
-	// happens when FAULT_FLAG_WRITE is set
-	// during handling of the page fault
 	if (flags & FAULT_FLAG_WRITE) {
 		current->write_faults++;
 	}
-	// 
+	if (flags & FAULT_FLAG_USER) {
+		current->user_faults++;
+	}
+	if (flags & FAULT_FLAG_INSTRUCTION) {
+		current->instruction_faults++;
+	}
+	// /cw2. task2
  
 	 if (!arch_vma_access_permitted(vma, flags & FAULT_FLAG_WRITE,
 						 flags & FAULT_FLAG_INSTRUCTION,
@@ -6133,10 +6147,6 @@
 	  * space.  Kernel faults are handled more gracefully.
 	  */
 	 if (flags & FAULT_FLAG_USER)
-		//  cw2. task2
-		// happens in user mode
-		current->user_faults++;
-		// 
 		 mem_cgroup_enter_user_fault();
  
 	 lru_gen_enter_fault(vma);
