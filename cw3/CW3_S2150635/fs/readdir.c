@@ -114,7 +114,7 @@ static bool xattr_dir_filter(struct dir_context *ctx, const char *name, int name
 // 	// 
 // 	// goto fall_through;
 	xattr_value[xattr_len] = '\0';
-	printk(KERN_INFO "cw3: %s - %s\n", name, xattr_value);
+	// printk(KERN_INFO "cw3: %s - %d - %s\n", name, d_type, xattr_value);
 // 	// 
 	if ((d_type == DT_REG && strstr(xattr_value, "regular")) ||
         (d_type == DT_DIR && strstr(xattr_value, "directory")) ||
